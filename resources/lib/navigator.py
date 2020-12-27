@@ -219,7 +219,7 @@ def listEpisodes(url, SERIE):
 		info['Season'] = SEAS
 		info['Episode'] = EPIS
 		info['Tvshowtitle'] = SERIE
-		info['Title'] = name
+		info['Title'] = title
 		info['Tagline'] = None
 		info['Plot'] = plot
 		info['Duration'] = duration
@@ -234,19 +234,42 @@ def listEpisodes(url, SERIE):
 			listitem.setArt({'fanart': image})
 		listitem.addStreamInfo('Video', {'Duration':duration})
 		listitem.setProperty('IsPlayable', 'true')
+		#listitem.setProperty('StartOffset', '3600.0')
+		#listitem.setProperty('ResumeTime', '3600')
+		#listitem.setProperty('StartPercent', '10')
+		log("EPNAME %s" % title)
 		listitem.addContextMenuItems([(translation(30654), 'RunPlugin('+HOST_AND_PATH+'?mode=AddToQueue)')])
 		xbmcplugin.addDirectoryItem(handle=ADDON_HANDLE, url=HOST_AND_PATH+'?IDENTiTY='+episIDD+'&mode=playCODE', listitem=listitem)
 	with io.open(WORKFILE, 'w', encoding='utf-8', errors='ignore') as input:
 		input.write(py2_uni('\n'.join(uno_LIST)))
 	xbmcplugin.endOfDirectory(ADDON_HANDLE)
 
-def playCODE(IDD):
+def playCODE(IDD, direct=False, _primeCacheDirect=False):
 	debug_MS("(navigator.playCODE) -------------------------------------------------- START = playCODE --------------------------------------------------")
-	debug_MS("(navigator.playCODE) ### IDD : {0} ###".format(str(IDD)))
+	debug_MS("(navigator.playCODE{1}) ### IDD : {0} ###".format((str(IDD)), "direct" if direct else ""))
 	pos_LISTE = 0
 	Special = False
 	endURL = False
-	PL = xbmc.PlayList(1)
+	PL = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+	if _primeCacheDirect:
+		# prime episode cache as it doesn't exist yet and we need the info;
+		# super-poor-man's approach as we could possibly direct play this instead
+		content = getUrl("{}/{}/".format(BASE_URL, IDD)).replace('\\', '')
+		data = re.search(r"\"name\":\"(?P<name>.+?)\",.+?id: {},\s+formatId: (?P<formatId>\d+),\s+category: "
+						 r"'(?P<cat>.+?)',.+?seasonId: (?P<seasonId>\d+),".format(IDD),
+						 content, re.DOTALL | re.MULTILINE)
+		if data:
+			# /frontend/php/ajax.php?query=bob&videosOnly=true&seasonId=219&formatId=104&category=full_episode
+			log(repr(data.groupdict()))
+			data_gd = data.groupdict()
+			data_url = "{}/frontend/php/ajax.php?query=bob&videosOnly=true&seasonId={}&formatId={}&category={}".format(
+				BASE_URL, data_gd["seasonId"], data_gd["formatId"], data_gd["cat"])
+			listEpisodes(data_url, data_gd["name"])
+
+	# shortcut for no workfile present and direct requested
+	if not _primeCacheDirect and direct and not os.path.isfile(WORKFILE):
+		return playCODE(IDD, direct=direct, _primeCacheDirect=True)
+
 	with io.open(WORKFILE, 'r', encoding='utf-8', errors='ignore') as output:
 		lines = output.readlines()
 		for line in lines:
@@ -268,25 +291,63 @@ def playCODE(IDD):
 					Special = True
 					videoURL = endURL.split('@@')
 					complete = '/'+str(len(videoURL))
+					stack_list = []
 					for single in videoURL:
 						log("(navigator.playCODE) PlaylistURL : {0} ".format(str(single)))
-						pos_LISTE += 1
-						NRS_title = translation(30628).format(title, str(pos_LISTE)+complete)
-						listitem = xbmcgui.ListItem(title)
-						listitem.setInfo(type='Video', infoLabels={'Tvshowtitle': seriesname, 'Title': NRS_title, 'Season': season, 'Episode': episode, 'Plot': plot, 'Duration': duration, 'Studio': 'myspass.de', 'Genre': 'Unterhaltung', 'mediatype': 'episode'})
-						listitem.setArt({'icon': icon, 'thumb': image, 'poster': image})
-						xbmc.sleep(50)
-						PL.add(url=single, listitem=listitem, index=pos_LISTE)
+						stack_list.append(single)
+						#pos_LISTE += 1
+						#NRS_title = translation(30628).format(title.encode("utf-8"), str(pos_LISTE)+complete)
+						#log("NRSTITLE: %s" % title)
+						#listitem = xbmcgui.ListItem(title)
+						#listitem.setInfo(type='Video', infoLabels={'Tvshowtitle': seriesname, 'Title': NRS_title, 'Season': season, 'Episode': episode, 'Plot': plot, 'Duration': duration, 'Studio': 'myspass.de', 'Genre': 'Unterhaltung', 'mediatype': 'episode'})
+						#listitem.setProperty('StartOffset', '360')
+						#listitem.setProperty('ResumeTime', '60')
+						#listitem.setProperty('StartPercent', '10')
+						#listitem.setArt({'icon': icon, 'thumb': image, 'poster': image})
+						#xbmc.sleep(150)
+						#PL.add(url=single, listitem=listitem, index=pos_LISTE)
+					log(repr(stack_list))
+					#xbmc.sleep(150)
+					endURL = "stack://{}".format(" , ".join(u for u in stack_list))
+					listitem = xbmcgui.ListItem(path=endURL)
+					listitem.setInfo(type='Video',
+									 infoLabels={'Tvshowtitle': seriesname, 'Title': title, 'Season': season,
+												 'Episode': episode, 'Plot': plot, 'Duration': duration,
+												 'Studio': 'myspass.de', 'Genre': 'Unterhaltung',
+												 'mediatype': 'episode'})
+					#log("RALLE: {}".format(repr({'Tvshowtitle': seriesname, 'Title': title, 'Season': season,
+					#							 'Episode': episode, 'Plot': plot, 'Duration': duration,
+					#							 'Studio': 'myspass.de', 'Genre': 'Unterhaltung',
+					#							 'mediatype': 'episode'})))
+					listitem.setArt({'icon': icon, 'thumb': image, 'poster': image})
+					#listitem.setProperty('StartOffset', '-1')
+					#xbmcplugin.setResolvedUrl(ADDON_HANDLE, True, listitem)
+					#xbmc.executebuiltin('PlayMedia(%s,resume)' % endURL)
+					listitem.setMimeType("mime/x-type")
+					player.play(endURL, listitem)
+					#xbmc.sleep(500)  # Wait until playback starts
+					#while player.isPlaying():
+					#	xbmc.sleep(500)
+					xbmc.log("PLU")
+					return
 				else:
 					log("(navigator.playCODE) StreamURL : {0} ".format(str(endURL)))
 					listitem = xbmcgui.ListItem(path=endURL)
-					listitem.setInfo(type='Video', infoLabels={'Tvshowtitle': seriesname, 'Title': title, 'Season': season, 'Episode': episode, 'Plot': plot, 'Duration': duration, 'Studio': 'myspass.de', 'Genre': 'Unterhaltung', 'mediatype': 'episode'})
+					#listitem.setInfo(type='Video', infoLabels={'Tvshowtitle': seriesname, 'Title': title, 'Season': season, 'Episode': episode, 'Plot': plot, 'Duration': duration, 'Studio': 'myspass.de', 'Genre': 'Unterhaltung', 'mediatype': 'episode'})
+					listitem.setInfo(type='Video', infoLabels={'Tvshowtitle': seriesname, 'Title': title, 'Season': season,
+															   'Episode': episode, 'Plot': plot, 'Duration': duration*2,
+															   'Studio': 'myspass.de', 'Genre': 'Unterhaltung',
+															   'mediatype': 'episode'})
 					listitem.setArt({'icon': icon, 'thumb': image, 'poster': image})
+
 	if endURL and Special:
 		return PL
 	elif endURL and not Special:
 		xbmcplugin.setResolvedUrl(ADDON_HANDLE, True, listitem)
 	else:
+		if direct and not _primeCacheDirect:
+			log("(navigator.playCODE:direct) Trying to prime cache")
+			return playCODE(IDD, direct=True, _primeCacheDirect=True)
 		failing("(navigator.playCODE) AbspielLink-00 : *MYSPASS* Der angeforderte -VideoLink- wurde NICHT gefunden !!!")
 		return dialog.notification(translation(30521).format('Video'), translation(30525), icon, 8000)
 
