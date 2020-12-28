@@ -156,7 +156,7 @@ def listEpisodes(url, SERIE):
 			title_2 = re.compile(' alt="(.*?)"/>', re.DOTALL).findall(entry)
 			title = title_1[0] if title_1 else title_2[0]
 		title = cleaning(title)
-		if not 'channels/' in startURL and ('Teil 2' in title or 'Teil 3' in title): continue
+		if not 'channels/' in startURL and not split_parts and ('Teil 2' in title or 'Teil 3' in title): continue
 		link = re.compile('<a href=["\']([^"]+?)["\']', re.DOTALL).findall(entry)[0]
 		link = BASE_URL+link if link[:4] != 'http' else link
 		try: episIDD = re.compile(r'https?://(?:www\.)?myspass\.de/([^/]+/)*(?P<id>\d+)', re.DOTALL).findall(link)[0][1]
@@ -165,7 +165,7 @@ def listEpisodes(url, SERIE):
 		if 'channels/' in startURL and 'channel erneut von vorne' in title.lower():
 			position -= 1
 			continue 
-		if not 'channels/' in startURL and ('Teil 1' in title or 'Teil 1' in newTITLE):
+		if not 'channels/' in startURL and (('Teil 1' in title or 'Teil 1' in newTITLE)) and not split_parts:
 			try:
 				if 'www.myspass.de' in link and '-Teil-' in link: shortURL = link.split('www.myspass.de')[1].split('-Teil-')[0]
 				else: shortURL = link
@@ -186,9 +186,10 @@ def listEpisodes(url, SERIE):
 						newSHOW_3, newTITLE_3, SEAS_3, EPIS_3, DESC_3, duration_3, photo_3, bcDATE_3, vidURL_3 = getVideodata(newIDD_3)
 						vidURL_3 = '@@'+vidURL_3
 			except: pass
-		if vidURL_2: vidURL = vidURL+vidURL_2
-		if vidURL_3: vidURL = vidURL+vidURL_3
-		duration = int(duration)+int(duration_2)+int(duration_3)
+		if not split_parts:
+			if vidURL_2: vidURL = vidURL+vidURL_2
+			if vidURL_3: vidURL = vidURL+vidURL_3
+		duration = int(duration)+int(duration_2)+int(duration_3) if not split_parts else int(duration)
 		image = icon
 		if photo:
 			if photo[:2] == '//': image = 'https:'+quote(photo)
@@ -196,7 +197,8 @@ def listEpisodes(url, SERIE):
 			else: image = quote(photo)
 		SERIE = newSHOW if startURL == BASE_LONG else SERIE
 		Note_1 = translation(30622).format(SERIE)
-		title = SERIE+' - '+newTITLE if startURL == BASE_LONG else title.split('- Teil')[0].split(' Teil')[0]
+		title = SERIE+' - '+newTITLE if startURL == BASE_LONG else \
+			(title.split('- Teil')[0].split(' Teil')[0] if not split_parts else title)
 		if EPIS != '0' and EPIS.isdigit():
 			SEAS, EPIS = SEAS.zfill(2), EPIS.zfill(2)
 			name = translation(30623).format(SEAS, EPIS, title)
@@ -261,6 +263,7 @@ def playCODE(IDD, direct=False, _primeCacheDirect=False):
 			data_url = "{}/frontend/php/ajax.php?query=bob&videosOnly=true&seasonId={}&formatId={}&category={}".format(
 				BASE_URL, data_gd["seasonId"], data_gd["formatId"], data_gd["cat"])
 			listEpisodes(data_url, data_gd["name"])
+			xbmc.sleep(500)
 
 	# shortcut for no workfile present and direct requested
 	if not _primeCacheDirect and direct and not os.path.isfile(WORKFILE):

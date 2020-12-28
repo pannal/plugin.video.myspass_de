@@ -42,6 +42,7 @@ icon                                         = (os.path.join(addonPath, 'icon.pn
 artpic                                      = os.path.join(addonPath, 'resources', 'media', '').encode('utf-8').decode('utf-8')
 alppic                                      = os.path.join(addonPath, 'resources', 'media', 'alphabet', '').encode('utf-8').decode('utf-8')
 useThumbAsFanart              = addon.getSetting('useThumbAsFanart') == 'true'
+split_parts = addon.getSetting('splitParts') == 'true'
 enableADJUSTMENT            = addon.getSetting('show_settings') == 'true'
 DEB_LEVEL                            = (LOG_MESSAGE if addon.getSetting('enableDebug') == 'true' else xbmc.LOGDEBUG)
 BASE_LONG                           = 'https://www.myspass.de/'
@@ -206,5 +207,6 @@ mode = unquote_plus(params.get('mode', 'root'))
 image = unquote_plus(params.get('image', ''))
 IDENTiTY = unquote_plus(params.get('IDENTiTY', ''))
 direct = params.get('direct', False)
+split_parts = params.get('split_parts', split_parts)
 origSERIE = unquote_plus(params.get('origSERIE', ''))
 extras = unquote_plus(params.get('extras', 'standard'))

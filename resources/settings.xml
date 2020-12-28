@@ -6,6 +6,7 @@
 		<setting type="sep"/>
 		<setting label="30231" type="lsep"/>
 		<setting label="30111" type="bool" id="show_settings" default="true"/>
+		<setting label="30113" type="bool" id="splitParts" default="false"/>
 		<setting type="sep"/>
 		<setting label="30232" type="lsep"/>
 		<setting label="30112" type="bool" id="enableDebug" default="false"/>

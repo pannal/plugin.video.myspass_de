@@ -38,6 +38,10 @@ msgctxt "#30112"
 msgid "     Detailed Addon-Debug (otherwise only Minimal-Log)"
 msgstr "     Addon-Debug mit Details (sonst nur Minimal-Log)"
 
+msgctxt "#30113"
+msgid "     Split video parts (allows resume on Kodi 18)"
+msgstr "     Geteilte Videos aufsplitten (erlaubt Resume in Kodi 18)"
+
 # empty strings from id 30113 to 30229
 # SETTINGS-TITLES
 
