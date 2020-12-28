@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<addon id="plugin.video.myspass_de" name="MySpass" version="4.1.0" provider-name="L0RE, realvito">
+<addon id="plugin.video.myspass_de" name="MySpass" version="4.1.1" provider-name="L0RE, realvito, pannal">
 	<requires>
 		<import addon="xbmc.python" version="2.25.0"/>
 	</requires>
@@ -24,7 +24,11 @@
 			<icon>icon.png</icon>
 			<fanart>fanart.jpg</fanart>
 		</assets>
-		<news>[B][COLOR orangered]Version 4.1.0  (14.12.2020)[/COLOR][/B] by realvito[CR]
+		<news>[B][COLOR orangered]Version 4.1.1  (28.12.2020)[/COLOR][/B] by pannal[CR]
+- fixed: Playback bug with umlauts in episode titles
+- add: Support for directly playing video files without navigating the addon (integrate with plugin.video.prosiebensat1)
+
+[B][COLOR orangered]Version 4.1.0  (14.12.2020)[/COLOR][/B] by realvito[CR]
 - fixed: Bug in KODI-MATRIX-Android-Releases for command 'open to read and write' is not UNICODE
 		</news>
 	</extension>

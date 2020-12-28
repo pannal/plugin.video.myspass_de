@@ -240,13 +240,32 @@ def listEpisodes(url, SERIE):
 		input.write(py2_uni('\n'.join(uno_LIST)))
 	xbmcplugin.endOfDirectory(ADDON_HANDLE)
 
-def playCODE(IDD):
+def playCODE(IDD, direct=False, _primeCacheDirect=False):
 	debug_MS("(navigator.playCODE) -------------------------------------------------- START = playCODE --------------------------------------------------")
-	debug_MS("(navigator.playCODE) ### IDD : {0} ###".format(str(IDD)))
+	debug_MS("(navigator.playCODE{1}) ### IDD : {0} ###".format((str(IDD)), "direct" if direct else ""))
 	pos_LISTE = 0
 	Special = False
 	endURL = False
-	PL = xbmc.PlayList(1)
+	PL = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+	if _primeCacheDirect:
+		# prime episode cache as it doesn't exist yet and we need the info;
+		# super-poor-man's approach as we could possibly direct play this instead
+		content = getUrl("{}/{}/".format(BASE_URL, IDD)).replace('\\', '')
+		data = re.search(r"\"name\":\"(?P<name>.+?)\",.+?id: {},\s+formatId: (?P<formatId>\d+),\s+category: "
+						 r"'(?P<cat>.+?)',.+?seasonId: (?P<seasonId>\d+),".format(IDD),
+						 content, re.DOTALL | re.MULTILINE)
+		if data:
+			# /frontend/php/ajax.php?query=bob&videosOnly=true&seasonId=219&formatId=104&category=full_episode
+			log(repr(data.groupdict()))
+			data_gd = data.groupdict()
+			data_url = "{}/frontend/php/ajax.php?query=bob&videosOnly=true&seasonId={}&formatId={}&category={}".format(
+				BASE_URL, data_gd["seasonId"], data_gd["formatId"], data_gd["cat"])
+			listEpisodes(data_url, data_gd["name"])
+
+	# shortcut for no workfile present and direct requested
+	if not _primeCacheDirect and direct and not os.path.isfile(WORKFILE):
+		return playCODE(IDD, direct=direct, _primeCacheDirect=True)
+
 	with io.open(WORKFILE, 'r', encoding='utf-8', errors='ignore') as output:
 		lines = output.readlines()
 		for line in lines:
@@ -271,7 +290,7 @@ def playCODE(IDD):
 					for single in videoURL:
 						log("(navigator.playCODE) PlaylistURL : {0} ".format(str(single)))
 						pos_LISTE += 1
-						NRS_title = translation(30628).format(title, str(pos_LISTE)+complete)
+						NRS_title = translation(30628).format(title.encode("utf-8"), str(pos_LISTE)+complete)
 						listitem = xbmcgui.ListItem(title)
 						listitem.setInfo(type='Video', infoLabels={'Tvshowtitle': seriesname, 'Title': NRS_title, 'Season': season, 'Episode': episode, 'Plot': plot, 'Duration': duration, 'Studio': 'myspass.de', 'Genre': 'Unterhaltung', 'mediatype': 'episode'})
 						listitem.setArt({'icon': icon, 'thumb': image, 'poster': image})
@@ -287,6 +306,9 @@ def playCODE(IDD):
 	elif endURL and not Special:
 		xbmcplugin.setResolvedUrl(ADDON_HANDLE, True, listitem)
 	else:
+		if direct and not _primeCacheDirect:
+			log("(navigator.playCODE:direct) Trying to prime cache")
+			return playCODE(IDD, direct=True, _primeCacheDirect=True)
 		failing("(navigator.playCODE) AbspielLink-00 : *MYSPASS* Der angeforderte -VideoLink- wurde NICHT gefunden !!!")
 		return dialog.notification(translation(30521).format('Video'), translation(30525), icon, 8000)
 

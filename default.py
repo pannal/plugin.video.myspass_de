@@ -37,7 +37,7 @@ def run():
 	elif mode == 'listEpisodes':
 		navigator.listEpisodes(url, origSERIE)
 	elif mode == 'playCODE':
-		navigator.playCODE(IDENTiTY)
+		navigator.playCODE(IDENTiTY, direct=direct)
 	elif mode == 'listShowsFavs':
 		navigator.listShowsFavs()
 	elif mode == 'favs':
