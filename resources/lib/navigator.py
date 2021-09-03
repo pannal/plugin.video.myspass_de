@@ -293,7 +293,7 @@ def playCODE(IDD, direct=False, _primeCacheDirect=False):
 					for single in videoURL:
 						log("(navigator.playCODE) PlaylistURL : {0} ".format(str(single)))
 						pos_LISTE += 1
-						NRS_title = translation(30628).format(title.encode("utf-8"), str(pos_LISTE)+complete)
+						NRS_title = translation(30628).format(title, str(pos_LISTE)+complete)
 						listitem = xbmcgui.ListItem(title)
 						listitem.setInfo(type='Video', infoLabels={'Tvshowtitle': seriesname, 'Title': NRS_title, 'Season': season, 'Episode': episode, 'Plot': plot, 'Duration': duration, 'Studio': 'myspass.de', 'Genre': 'Unterhaltung', 'mediatype': 'episode'})
 						listitem.setArt({'icon': icon, 'thumb': image, 'poster': image})
